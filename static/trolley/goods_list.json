@@ -1,0 +1,34 @@
+{
+	"goods_list":{
+		"self_run":{
+			"tit":"狗民网自营(爱宠团)",
+			"url":"autotrophy",
+			"coupon":true,
+			"indent":[
+				{
+					"name":"日本多格曼犬用火腿肠7根装105g系列！柔软的特性适合各犬种",
+					"src":"/static/trolley/nofood.png",
+					"alt":"鱼肉 7根装",
+					"price":"10.50",
+					"num":0,
+					"freight":true,
+					"buy":1,
+					"isCheck":false
+				},
+				{
+					"name":"日本多格曼犬用火腿肠7根装105g系列！柔软的特性适合各犬种",
+					"src":"/static/trolley/nofood.png",
+					"alt":"鱼肉 7根装",
+					"price":"13.50",
+					"num":1,
+					"freight":false,
+					"buy":1,
+					"isCheck":false
+				}
+			]
+		},
+		"private":{
+			"tit":""
+		}
+	}
+}
