@@ -1,30 +1,38 @@
 <template>
 	<div class="box">
-		<div v-for="(item,index) in list" v-if="item.tit">
-			<div class="rank">
-				<img src="../../../assets/trolley/btn_checkbox_n.png" class="top-radio"/>
-				<div class="lt" @click="jump_autotrophy(item.url)">
-					<img src="../../../assets/trolley/ic_shop.png"/>
-					<span>{{item.tit}}</span>
-					<img src="../../../assets/trolley/ic_arrows_right.png"/>
-				</div>
-				<div class="gt" @click="jump_coupon" v-if="item.coupon">
-					领券
-				</div>
-			</div>
-			<ul class="list">
-				<li v-for="(val,ind) in item.indent">
-					<img src="../../../assets/trolley/btn_checkbox_n.png" class="list-radio" v-if="val.num > 0 && !val.isCheck" @click="theRadio(ind)"/>
-					<img src="../../../assets/trolley/btn_checkbox_p.png" class="list-radio" v-else-if="val.num > 0 && !!val.isCheck" @click="theRadio(ind)"/>
-					<div class="lt"><img :src="val.src"/><div class="hint" v-if="val.num < 1">没货</div></div>
-					<div class="ct">
-						<p>{{val.name}}</p>
-						<p class="glup">{{val.alt}}</p>
-						<p>￥{{val.price}}</p>
+		<div ref="wrapper" class="wrapper">
+		<div class="c">
+			
+			<div v-for="(item,index) in list" v-if="item.tit">
+				<div class="rank">
+					<img src="../../../assets/trolley/btn_checkbox_n.png" class="top-radio"/>
+					<div class="lt" @click="jump_autotrophy(item.url)">
+						<img src="../../../assets/trolley/ic_shop.png"/>
+						<span>{{item.tit}}</span>
+						<img src="../../../assets/trolley/ic_arrows_right.png"/>
 					</div>
-					<div class="gt">×{{val.buy}}</div>
-				</li>
-			</ul>
+					<div class="gt" @click="jump_coupon" v-if="item.coupon">
+						领券
+					</div>
+				</div>
+				<ul class="list">
+					<li v-for="(val,ind) in item.indent">
+						<img src="../../../assets/trolley/btn_checkbox_n.png" class="list-radio" v-if="val.num > 0 && !val.isCheck" @click="theRadio(ind)"/>
+						<img src="../../../assets/trolley/btn_checkbox_p.png" class="list-radio" v-else-if="val.num > 0 && !!val.isCheck" @click="theRadio(ind)"/>
+						<div class="lt"><img :src="val.src"/><div class="hint" v-if="val.num < 1">没货</div></div>
+						<div class="ct">
+							<p>{{val.name}}</p>
+							<p class="glup">{{val.alt}}</p>
+							<p>￥{{val.price}} </p>
+						</div>
+						<div class="gt">×{{val.buy}}</div>
+					</li>
+				</ul>
+			</div>
+		
+
+		        
+		  </div>
 		</div>
 		<div class="purchase">
 			<div class="left">
@@ -34,8 +42,9 @@
 					<span>全选</span>
 				</div>
 				<div class="total">
-					<p>总计：￥0.00元</p>
-					<p>(不含运费)</p>
+					<p>总计：￥{{total | convert}}元</p>
+					<p v-if="isFreight">(含运费)</p>
+					<p v-else="!isFreight">(不含运费)</p>
 				</div>
 			</div>
 			<div class="wind">
@@ -46,12 +55,21 @@
 </template>
 
 <script>
+import BScroll from "better-scroll";
 	export default{
 		name:"trolley",
 		data(){
 			return {
 				"list":[],
-				'checkAllFlag':false
+				'checkAllFlag':false,
+				"total":0,
+				"isFreight":false
+			}
+		},
+		filters:{
+			convert:function(val,type){
+				if(!val) return "0.00";
+				return val.toFixed(2);
 			}
 		},
 		methods:{
@@ -69,16 +87,19 @@
 				this.Picker(val)
 			},
 			Picker:function(val){
+				this.total=0;
+				let checkAll=true;
 				for (let key in this.list) {
 					for (let index in this.list[key]) {
 						if(index=="indent"){
 							if(val){
-								if(!this.list[key][index][val].isCheck){
+								if(!this.list[key][index][val].isCheck && this.list[key][index][val].num ){
 									this.$set(this.list[key][index][val] , "isCheck" , true);
 								}else{
 									this.$set(this.list[key][index][val] , "isCheck" , false);
 								}
-								console.log(this.list[key][index][val].isCheck)
+//								console.log(this.list[key][index][val].isCheck)
+								
 							}else{
 								for (let ind in this.list[key][index]) {
 									if(this.checkAllFlag){
@@ -86,6 +107,22 @@
 									}else{
 										this.list[key][index][ind].isCheck=false;
 									}
+								}
+							}
+							for (let k in this.list[key][index]) {
+								if(this.list[key][index][k].isCheck && this.list[key][index][k].num){
+									this.total+=parseFloat(this.list[key][index][k].price)*parseFloat(this.list[key][index][k].num);
+									if(this.list[key][index][k].freight){
+										this.isFreight=true;
+									}
+								}
+								if(!this.list[key][index][k].isCheck && this.list[key][index][k].num){
+									checkAll=false;
+								}
+								if(checkAll){
+									this.checkAllFlag=true;
+								}else{
+									this.checkAllFlag=false;
 								}
 							}
 						}
@@ -96,18 +133,37 @@
 		mounted(){
 			this.$axios.get("./static/trolley/goods_list.json").then(
 				(res) => {
-					this.list=res.data.goods_list
+						this.list=res.data.goods_list
+						this.$nextTick(() => {
+						this.scroll=new BScroll(this.$refs.wrapper,{
+						   // scrollY: true,
+						    click: true
+						})
+					})
 				},
 				(err) => {
 					console.log(err)
 				}
 			)
+			
 		}
 	}
 
 </script>
 
 <style lang="less" scoped>
+.content{
+	
+}
+.wrapper{
+	position: absolute;
+	top: 0;
+	bottom: 1.41rem;
+	left: 0;
+	right: 0;
+	overflow: hidden;
+	background: #f1f1f1;	
+}
 	.rank,.list li{
 		position: relative;
 	}
@@ -173,11 +229,6 @@
 		}
 		.list{
 			width: 100%;
-			position: absolute;
-			top: 1.24rem;
-			bottom: 1.44rem;
-			background: red;
-			background: #f1f1f1;	
 			overflow: hidden;
 			list-style: none;
 			li{
